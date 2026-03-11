@@ -351,12 +351,12 @@ class MainActivity : AppCompatActivity() {
                 displayZoomControls = false
             }
             setInitialScale(67)
+            setOnTouchListener(threeFingerLongPressListener)
             loadUrl(url)
         }
-        binding.root.setOnTouchListener(threeFingerLongPressListener)
     }
 
-    private val threeFingerLongPressListener = View.OnTouchListener { _, event ->
+    private val threeFingerLongPressListener = View.OnTouchListener { v, event ->
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 when (event.pointerCount) {
@@ -370,7 +370,7 @@ class MainActivity : AppCompatActivity() {
                                 openWhatsAppAdmin()
                             }
                         }
-                        handler.postDelayed(twoFingerRunnable!!, 600)
+                        handler.postDelayed(twoFingerRunnable!!, 1000)
                     }
                     3 -> {
                         twoFingerRunnable?.let { handler.removeCallbacks(it) }
@@ -382,9 +382,16 @@ class MainActivity : AppCompatActivity() {
                                 showChangeLinkDialog()
                             }
                         }
-                        handler.postDelayed(threeFingerRunnable!!, 800)
+                        handler.postDelayed(threeFingerRunnable!!, 1000)
                     }
                 }
+                false
+            }
+            MotionEvent.ACTION_MOVE -> {
+                twoFingerRunnable?.let { handler.removeCallbacks(it) }
+                twoFingerRunnable = null
+                threeFingerRunnable?.let { handler.removeCallbacks(it) }
+                threeFingerRunnable = null
                 false
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
