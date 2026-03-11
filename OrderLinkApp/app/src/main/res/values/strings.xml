@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">رابط النظام</string>
+    <string name="enter_link">أدخل رابط الدخول الخاص بك</string>
+    <string name="link_hint">https://d.ksebstor.site/...</string>
+    <string name="save_and_open">حفظ وفتح</string>
+    <string name="link_required">الرجاء إدخال الرابط</string>
+    <string name="invalid_link">الرجاء إدخال رابط صحيح</string>
+    <string name="change_link">تغيير الرابط</string>
+</resources>
