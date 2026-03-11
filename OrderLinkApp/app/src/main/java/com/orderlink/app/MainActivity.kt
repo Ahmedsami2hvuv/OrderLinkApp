@@ -226,33 +226,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFileChooserOptions() {
-        val options = arrayOf(
-            getString(R.string.camera),
-            "المعرض"
-        )
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.choose_photo))
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> {
-                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                            openCameraForPhoto()
-                        } else {
-                            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-                        }
-                    }
-                    1 -> getContentLauncher.launch("image/*")
-                }
-            }
-            .setNegativeButton(android.R.string.cancel) { _, _ ->
-                filePathCallback?.onReceiveValue(null)
-                filePathCallback = null
-            }
-            .setOnCancelListener {
-                filePathCallback?.onReceiveValue(null)
-                filePathCallback = null
-            }
-            .show()
+        // فتح الكاميرا مباشرة عند طلب الموقع لصورة (بدون سؤال كاميرا أم معرض)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            openCameraForPhoto()
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
     }
 
     private fun openCameraForPhoto() {
