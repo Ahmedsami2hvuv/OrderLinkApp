@@ -43,6 +43,7 @@ class MainActivity : AppCompatActivity() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var threeFingerRunnable: Runnable? = null
+    private var twoFingerRunnable: Runnable? = null
 
     private val takePictureLauncher = registerForActivityResult(
         ActivityResultContracts.TakePicture()
@@ -104,6 +105,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val PREFS_NAME = "OrderLinkPrefs"
         private const val KEY_SAVED_URL = "saved_url"
+        private const val ADMIN_WHATSAPP = "964773921468"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -357,26 +359,54 @@ class MainActivity : AppCompatActivity() {
     private val threeFingerLongPressListener = View.OnTouchListener { _, event ->
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
-                if (event.pointerCount == 3) {
-                    threeFingerRunnable?.let { handler.removeCallbacks(it) }
-                    threeFingerRunnable = Runnable {
+                when (event.pointerCount) {
+                    2 -> {
+                        threeFingerRunnable?.let { handler.removeCallbacks(it) }
                         threeFingerRunnable = null
-                        if (binding.webView.visibility == View.VISIBLE) {
-                            showChangeLinkDialog()
+                        twoFingerRunnable?.let { handler.removeCallbacks(it) }
+                        twoFingerRunnable = Runnable {
+                            twoFingerRunnable = null
+                            if (binding.webView.visibility == View.VISIBLE) {
+                                openWhatsAppAdmin()
+                            }
                         }
+                        handler.postDelayed(twoFingerRunnable!!, 600)
                     }
-                    handler.postDelayed(threeFingerRunnable!!, 800)
+                    3 -> {
+                        twoFingerRunnable?.let { handler.removeCallbacks(it) }
+                        twoFingerRunnable = null
+                        threeFingerRunnable?.let { handler.removeCallbacks(it) }
+                        threeFingerRunnable = Runnable {
+                            threeFingerRunnable = null
+                            if (binding.webView.visibility == View.VISIBLE) {
+                                showChangeLinkDialog()
+                            }
+                        }
+                        handler.postDelayed(threeFingerRunnable!!, 800)
+                    }
                 }
                 false
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
-                if (event.pointerCount <= 2) {
+                if (event.pointerCount <= 1) {
+                    twoFingerRunnable?.let { handler.removeCallbacks(it) }
+                    twoFingerRunnable = null
                     threeFingerRunnable?.let { handler.removeCallbacks(it) }
                     threeFingerRunnable = null
                 }
                 false
             }
             else -> false
+        }
+    }
+
+    private fun openWhatsAppAdmin() {
+        val url = "https://wa.me/$ADMIN_WHATSAPP"
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            Toast.makeText(this, getString(R.string.opening_admin_whatsapp), Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, getString(R.string.cannot_open_whatsapp), Toast.LENGTH_SHORT).show()
         }
     }
 
