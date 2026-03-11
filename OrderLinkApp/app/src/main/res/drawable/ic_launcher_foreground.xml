@@ -4,15 +4,15 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- خلفية مستديرة -->
+    <!-- دائرة حمراء في المنتصف (ضمن المنطقة الآمنة 66%) -->
     <path
         android:fillColor="#C62828"
-        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"/>
-    <!-- حرف الألف باللون الأبيض -->
+        android:pathData="M54,54m-36,0a36,36 0,1 1,72 0a36,36 0,1 1,-72 0"/>
+    <!-- حرف الألف أبيض في المنتصف -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M50,32 L58,32 L58,76 L50,76 Z"/>
+        android:pathData="M51,36 L57,36 L57,72 L51,72 Z"/>
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M48,28 L62,28 L60,32 L50,32 Z"/>
+        android:pathData="M49.5,32 L58.5,32 L57,36 L51,36 Z"/>
 </vector>
