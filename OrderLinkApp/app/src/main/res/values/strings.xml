@@ -8,7 +8,6 @@
     <string name="invalid_link">الرجاء إدخال رابط صحيح</string>
     <string name="change_link">تغيير الرابط</string>
     <string name="camera">الكاميرا</string>
-    <string name="gallery">المعرض</string>
     <string name="choose_photo">اختر صورة</string>
     <string name="camera_error">تعذر فتح الكاميرا</string>
     <string name="camera_permission_required">السماح بالكاميرا مطلوب لالتقاط الصورة</string>
