@@ -290,6 +290,8 @@ class MainActivity : AppCompatActivity() {
         invalidateOptionsMenu()
 
         binding.webView.apply {
+            setBackgroundColor(0xFFEEEEEE.toInt())
+            isLongClickable = true
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(
                     view: WebView?,
@@ -352,11 +354,12 @@ class MainActivity : AppCompatActivity() {
             }
             setInitialScale(67)
             setOnTouchListener(threeFingerLongPressListener)
-            loadUrl(url)
+            post { loadUrl(url) }
         }
     }
 
-    private val threeFingerLongPressListener = View.OnTouchListener { v, event ->
+    private val threeFingerLongPressListener = View.OnTouchListener { _, event ->
+        if (event.pointerCount == 1) return@OnTouchListener false
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 when (event.pointerCount) {
