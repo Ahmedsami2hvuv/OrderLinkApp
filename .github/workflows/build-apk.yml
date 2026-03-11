@@ -8,10 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: OrderLinkApp
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,8 +37,18 @@ jobs:
       - name: Build APK
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: Upload APK (artifact)
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: OrderLinkApp/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Create Release and upload APK (تحميل مباشر من الجوال)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: رابط النظام - Build ${{ github.run_number }}
+          files: OrderLinkApp/app/build/outputs/apk/debug/app-debug.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
