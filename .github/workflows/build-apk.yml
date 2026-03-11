@@ -8,9 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: OrderLinkApp
 
     steps:
       - name: Checkout
@@ -27,16 +24,22 @@ jobs:
         with:
           packages: 'tools platform-tools platforms;android-34 build-tools;34.0.0'
 
+      - name: Set ANDROID_HOME
+        run: |
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+
       - name: Install Gradle and create wrapper
         run: |
+          cd OrderLinkApp
           wget -q https://services.gradle.org/distributions/gradle-8.0-bin.zip -O gradle.zip
           unzip -q gradle.zip
-          echo "$PWD/gradle-8.0/bin" >> $GITHUB_PATH
-          echo "GRADLE_HOME=$PWD/gradle-8.0" >> $GITHUB_ENV
-          $PWD/gradle-8.0/bin/gradle wrapper --gradle-version 8.0
+          ./gradle-8.0/bin/gradle wrapper --gradle-version 8.0 --no-daemon
 
       - name: Build APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: |
+          cd OrderLinkApp
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
