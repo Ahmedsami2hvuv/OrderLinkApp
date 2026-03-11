@@ -55,7 +55,15 @@ class MainActivity : AppCompatActivity() {
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { _ -> }
+    ) { granted ->
+        if (granted) {
+            openCameraForPhoto()
+        } else {
+            Toast.makeText(this, getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show()
+            filePathCallback?.onReceiveValue(null)
+            filePathCallback = null
+        }
+    }
 
     private val getContentLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -181,9 +189,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFileChooserOptions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-        }
         val options = arrayOf(
             getString(R.string.camera),
             getString(R.string.gallery)
@@ -192,7 +197,13 @@ class MainActivity : AppCompatActivity() {
             .setTitle(getString(R.string.choose_photo))
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> openCameraForPhoto()
+                    0 -> {
+                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                            openCameraForPhoto()
+                        } else {
+                            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    }
                     1 -> getContentLauncher.launch("image/*")
                 }
             }
@@ -208,6 +219,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openCameraForPhoto() {
+        if (filePathCallback == null) return
         try {
             val photoFile = File(
                 cacheDir,
@@ -224,6 +236,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, getString(R.string.camera_error), Toast.LENGTH_SHORT).show()
             filePathCallback?.onReceiveValue(null)
             filePathCallback = null
+            lastCameraFile = null
         }
     }
 
