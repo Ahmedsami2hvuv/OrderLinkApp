@@ -144,6 +144,7 @@ class MainActivity : AppCompatActivity() {
     private fun showUrlInputScreen() {
         binding.urlInputSection.visibility = View.VISIBLE
         binding.webView.visibility = View.GONE
+        binding.root.setOnTouchListener(null)
         supportActionBar?.show()
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
         invalidateOptionsMenu()
@@ -301,6 +302,19 @@ class MainActivity : AppCompatActivity() {
                     if (urlStr != null) return handleUrl(urlStr, url)
                     return false
                 }
+
+                override fun onPageFinished(view: WebView?, pageUrl: String?) {
+                    super.onPageFinished(view, pageUrl)
+                    view?.evaluateJavascript(
+                        "(function() {" +
+                        "var m=document.querySelector('meta[name=viewport]');" +
+                        "var c='width=device-width,initial-scale=0.67,minimum-scale=0.25,maximum-scale=4,user-scalable=yes';" +
+                        "if(m){m.setAttribute('content',c);}else{" +
+                        "var meta=document.createElement('meta');meta.name='viewport';meta.content=c;document.head.appendChild(meta);}" +
+                        "})();",
+                        null
+                    )
+                }
             }
             webChromeClient = object : WebChromeClient() {
                 override fun onShowFileChooser(
@@ -331,13 +345,13 @@ class MainActivity : AppCompatActivity() {
                 allowContentAccess = true
                 javaScriptCanOpenWindowsAutomatically = true
                 setSupportZoom(true)
-                builtInZoomControls = false
+                builtInZoomControls = true
                 displayZoomControls = false
             }
             setInitialScale(67)
-            setOnTouchListener(threeFingerLongPressListener)
             loadUrl(url)
         }
+        binding.root.setOnTouchListener(threeFingerLongPressListener)
     }
 
     private val threeFingerLongPressListener = View.OnTouchListener { _, event ->
