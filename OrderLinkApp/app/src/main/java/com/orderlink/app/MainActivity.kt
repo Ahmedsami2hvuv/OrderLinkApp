@@ -16,11 +16,15 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Menu
 import android.view.MenuItem
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebView
+import android.widget.ImageButton
+import android.widget.FrameLayout
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.result.contract.ActivityResultContracts
@@ -106,6 +110,10 @@ class MainActivity : AppCompatActivity() {
         private const val PREFS_NAME = "OrderLinkPrefs"
         private const val KEY_SAVED_URL = "saved_url"
         private const val ADMIN_WHATSAPP = "9647733921468"
+        private const val KEY_FLOAT_X_PERCENT = "float_back_x_percent"
+        private const val KEY_FLOAT_Y_PERCENT = "float_back_y_percent"
+        private const val DEFAULT_FLOAT_X_PERCENT = 85f
+        private const val DEFAULT_FLOAT_Y_PERCENT = 10f
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -145,7 +153,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showUrlInputScreen() {
         binding.urlInputSection.visibility = View.VISIBLE
-        binding.webView.visibility = View.GONE
+        binding.swipeRefresh.visibility = View.GONE
+        binding.floatBackButton.visibility = View.GONE
         binding.root.setOnTouchListener(null)
         supportActionBar?.show()
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
@@ -285,9 +294,11 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     private fun showWebViewAndLoad(url: String) {
         binding.urlInputSection.visibility = View.GONE
-        binding.webView.visibility = View.VISIBLE
+        binding.swipeRefresh.visibility = View.VISIBLE
+        binding.floatBackButton.visibility = View.VISIBLE
         supportActionBar?.hide()
         invalidateOptionsMenu()
+        setupFloatingBackButton()
 
         binding.webView.apply {
             setBackgroundColor(0xFFEEEEEE.toInt())
@@ -309,6 +320,7 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onPageFinished(view: WebView?, pageUrl: String?) {
                     super.onPageFinished(view, pageUrl)
+                    binding.swipeRefresh.isRefreshing = false
                     view?.evaluateJavascript(
                         "(function() {" +
                         "var m=document.querySelector('meta[name=viewport]');" +
@@ -356,6 +368,94 @@ class MainActivity : AppCompatActivity() {
             setOnTouchListener(threeFingerLongPressListener)
             post { loadUrl(url) }
         }
+        binding.swipeRefresh.setOnRefreshListener {
+            binding.webView.reload()
+        }
+    }
+
+    private fun setupFloatingBackButton() {
+        val btn = binding.floatBackButton
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        btn.post {
+            val parent = btn.parent as? FrameLayout ?: return@post
+            val pw = parent.width
+            val ph = parent.height
+            val bw = btn.width
+            val bh = btn.height
+            if (pw <= 0 || ph <= 0) return@post
+            val xPercent = prefs.getFloat(KEY_FLOAT_X_PERCENT, DEFAULT_FLOAT_X_PERCENT).coerceIn(0f, 100f)
+            val yPercent = prefs.getFloat(KEY_FLOAT_Y_PERCENT, DEFAULT_FLOAT_Y_PERCENT).coerceIn(0f, 100f)
+            val left = (pw * xPercent / 100f - bw / 2f).toInt().coerceIn(0, pw - bw)
+            val top = (ph * yPercent / 100f - bh / 2f).toInt().coerceIn(0, ph - bh)
+            val lp = btn.layoutParams as? FrameLayout.LayoutParams ?: return@post
+            lp.gravity = Gravity.TOP or Gravity.START
+            lp.leftMargin = left
+            lp.topMargin = top
+            lp.marginEnd = 0
+            lp.marginStart = 0
+            btn.layoutParams = lp
+        }
+        var dragStartX = 0f
+        var dragStartY = 0f
+        var viewStartLeft = 0
+        var viewStartTop = 0
+        var isDragging = false
+        val dragThreshold = 20
+        btn.setOnTouchListener { v, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    dragStartX = event.rawX
+                    dragStartY = event.rawY
+                    val lp = v.layoutParams as? FrameLayout.LayoutParams
+                    if (lp != null) {
+                        viewStartLeft = lp.leftMargin
+                        viewStartTop = lp.topMargin
+                    }
+                    isDragging = false
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = event.rawX - dragStartX
+                    val dy = event.rawY - dragStartY
+                    if (!isDragging && (kotlin.math.abs(dx) > dragThreshold || kotlin.math.abs(dy) > dragThreshold)) {
+                        isDragging = true
+                    }
+                    if (isDragging) {
+                        val parent = v.parent as? FrameLayout ?: return@setOnTouchListener true
+                        val newLeft = (viewStartLeft + dx).toInt().coerceIn(0, parent.width - v.width)
+                        val newTop = (viewStartTop + dy).toInt().coerceIn(0, parent.height - v.height)
+                        val lp = v.layoutParams as? FrameLayout.LayoutParams
+                        if (lp != null) {
+                            lp.leftMargin = newLeft
+                            lp.topMargin = newTop
+                            v.layoutParams = lp
+                        }
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (isDragging) {
+                        val lp = v.layoutParams as? FrameLayout.LayoutParams
+                        val parent = v.parent as? FrameLayout
+                        if (lp != null && parent != null && parent.width > 0 && parent.height > 0) {
+                            val centerX = lp.leftMargin + v.width / 2f
+                            val centerY = lp.topMargin + v.height / 2f
+                            val xPercent = (centerX / parent.width * 100f).coerceIn(0f, 100f)
+                            val yPercent = (centerY / parent.height * 100f).coerceIn(0f, 100f)
+                            prefs.edit()
+                                .putFloat(KEY_FLOAT_X_PERCENT, xPercent)
+                                .putFloat(KEY_FLOAT_Y_PERCENT, yPercent)
+                                .apply()
+                        }
+                    } else {
+                        if (binding.webView.canGoBack()) {
+                            binding.webView.goBack()
+                        } else {
+                            finish()
+                        }
+                    }
+                }
+            }
+            true
+        }
     }
 
     private val threeFingerLongPressListener = View.OnTouchListener { _, event ->
@@ -369,7 +469,7 @@ class MainActivity : AppCompatActivity() {
                         twoFingerRunnable?.let { handler.removeCallbacks(it) }
                         twoFingerRunnable = Runnable {
                             twoFingerRunnable = null
-                            if (binding.webView.visibility == View.VISIBLE) {
+                            if (binding.swipeRefresh.visibility == View.VISIBLE) {
                                 openWhatsAppAdmin()
                             }
                         }
@@ -381,7 +481,7 @@ class MainActivity : AppCompatActivity() {
                         threeFingerRunnable?.let { handler.removeCallbacks(it) }
                         threeFingerRunnable = Runnable {
                             threeFingerRunnable = null
-                            if (binding.webView.visibility == View.VISIBLE) {
+                            if (binding.swipeRefresh.visibility == View.VISIBLE) {
                                 showChangeLinkDialog()
                             }
                         }
@@ -452,7 +552,7 @@ class MainActivity : AppCompatActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (binding.webView.visibility == View.VISIBLE && binding.webView.canGoBack()) {
+        if (binding.swipeRefresh.visibility == View.VISIBLE && binding.webView.canGoBack()) {
             binding.webView.goBack()
         } else {
             super.onBackPressed()
