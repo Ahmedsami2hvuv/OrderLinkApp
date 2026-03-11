@@ -355,8 +355,15 @@ class MainActivity : AppCompatActivity() {
     private fun setupFloatingBackButton() {
         val btn = binding.floatBackButton
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val lp = btn.layoutParams as? FrameLayout.LayoutParams ?: return
+        lp.gravity = Gravity.TOP or Gravity.START
+        lp.leftMargin = 0
+        lp.topMargin = 0
+        lp.marginStart = 0
+        lp.marginEnd = 0
+        btn.layoutParams = lp
         btn.post {
-            val parent = btn.parent as? FrameLayout ?: return@post
+            val parent = btn.parent as? View ?: return@post
             val pw = parent.width
             val ph = parent.height
             val bw = btn.width
@@ -364,20 +371,15 @@ class MainActivity : AppCompatActivity() {
             if (pw <= 0 || ph <= 0) return@post
             val xPercent = prefs.getFloat(KEY_FLOAT_X_PERCENT, DEFAULT_FLOAT_X_PERCENT).coerceIn(0f, 100f)
             val yPercent = prefs.getFloat(KEY_FLOAT_Y_PERCENT, DEFAULT_FLOAT_Y_PERCENT).coerceIn(0f, 100f)
-            val left = (pw * xPercent / 100f - bw / 2f).toInt().coerceIn(0, pw - bw)
-            val top = (ph * yPercent / 100f - bh / 2f).toInt().coerceIn(0, ph - bh)
-            val lp = btn.layoutParams as? FrameLayout.LayoutParams ?: return@post
-            lp.gravity = Gravity.TOP or Gravity.START
-            lp.leftMargin = left
-            lp.topMargin = top
-            lp.marginEnd = 0
-            lp.marginStart = 0
-            btn.layoutParams = lp
+            val x = (pw * xPercent / 100f - bw / 2f).coerceIn(0f, (pw - bw).toFloat())
+            val y = (ph * yPercent / 100f - bh / 2f).coerceIn(0f, (ph - bh).toFloat())
+            btn.x = x
+            btn.y = y
         }
         var dragStartX = 0f
         var dragStartY = 0f
-        var viewStartLeft = 0
-        var viewStartTop = 0
+        var viewStartX = 0f
+        var viewStartY = 0f
         var isDragging = false
         val dragThreshold = 20
         btn.setOnTouchListener { v, event ->
@@ -385,11 +387,8 @@ class MainActivity : AppCompatActivity() {
                 MotionEvent.ACTION_DOWN -> {
                     dragStartX = event.rawX
                     dragStartY = event.rawY
-                    val lp = v.layoutParams as? FrameLayout.LayoutParams
-                    if (lp != null) {
-                        viewStartLeft = lp.leftMargin
-                        viewStartTop = lp.topMargin
-                    }
+                    viewStartX = v.x
+                    viewStartY = v.y
                     isDragging = false
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -399,24 +398,19 @@ class MainActivity : AppCompatActivity() {
                         isDragging = true
                     }
                     if (isDragging) {
-                        val parent = v.parent as? FrameLayout ?: return@setOnTouchListener true
-                        val newLeft = (viewStartLeft + dx).toInt().coerceIn(0, parent.width - v.width)
-                        val newTop = (viewStartTop + dy).toInt().coerceIn(0, parent.height - v.height)
-                        val lp = v.layoutParams as? FrameLayout.LayoutParams
-                        if (lp != null) {
-                            lp.leftMargin = newLeft
-                            lp.topMargin = newTop
-                            v.layoutParams = lp
-                        }
+                        val parent = v.parent as? View ?: return@setOnTouchListener true
+                        val newX = (viewStartX + dx).coerceIn(0f, (parent.width - v.width).toFloat())
+                        val newY = (viewStartY + dy).coerceIn(0f, (parent.height - v.height).toFloat())
+                        v.x = newX
+                        v.y = newY
                     }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     if (isDragging) {
-                        val lp = v.layoutParams as? FrameLayout.LayoutParams
-                        val parent = v.parent as? FrameLayout
-                        if (lp != null && parent != null && parent.width > 0 && parent.height > 0) {
-                            val centerX = lp.leftMargin + v.width / 2f
-                            val centerY = lp.topMargin + v.height / 2f
+                        val parent = v.parent as? View ?: return@setOnTouchListener true
+                        if (parent.width > 0 && parent.height > 0) {
+                            val centerX = v.x + v.width / 2f
+                            val centerY = v.y + v.height / 2f
                             val xPercent = (centerX / parent.width * 100f).coerceIn(0f, 100f)
                             val yPercent = (centerY / parent.height * 100f).coerceIn(0f, 100f)
                             prefs.edit()
