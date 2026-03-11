@@ -105,7 +105,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val PREFS_NAME = "OrderLinkPrefs"
         private const val KEY_SAVED_URL = "saved_url"
-        private const val ADMIN_WHATSAPP = "964773921468"
+        private const val ADMIN_WHATSAPP = "9647733921468"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
