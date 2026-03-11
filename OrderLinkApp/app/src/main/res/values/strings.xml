@@ -15,4 +15,5 @@
     <string name="change_link_confirm">هل تريد إدخال رابط جديد؟</string>
     <string name="opening_admin_whatsapp">فتح واتساب الإداري</string>
     <string name="cannot_open_whatsapp">تعذر فتح واتساب</string>
+    <string name="float_back_content_description">زر رجوع</string>
 </resources>
