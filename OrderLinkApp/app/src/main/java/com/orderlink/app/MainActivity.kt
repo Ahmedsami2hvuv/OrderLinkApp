@@ -1,9 +1,11 @@
 package com.orderlink.app
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -39,7 +41,24 @@ class MainActivity : AppCompatActivity() {
     private val takePictureLauncher = registerForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { success ->
-        if (success && lastCameraFile != null) {
+        if (success && lastCameraFile != null && lastCameraFile!!.exists()) {
+            val uri = FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                lastCameraFile!!
+            )
+            filePathCallback?.onReceiveValue(arrayOf(uri))
+        } else {
+            filePathCallback?.onReceiveValue(null)
+        }
+        filePathCallback = null
+        lastCameraFile = null
+    }
+
+    private val takePictureWithIntentLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && lastCameraFile != null && lastCameraFile!!.exists()) {
             val uri = FileProvider.getUriForFile(
                 this,
                 "${packageName}.fileprovider",
@@ -225,13 +244,27 @@ class MainActivity : AppCompatActivity() {
                 cacheDir,
                 "IMG_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.jpg"
             )
+            photoFile.parentFile?.mkdirs()
+            photoFile.createNewFile()
             lastCameraFile = photoFile
             val photoUri = FileProvider.getUriForFile(
                 this,
                 "${packageName}.fileprovider",
                 photoFile
             )
-            takePictureLauncher.launch(photoUri)
+            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            if (intent.resolveActivity(packageManager) != null) {
+                takePictureWithIntentLauncher.launch(intent)
+            } else {
+                Toast.makeText(this, getString(R.string.camera_error), Toast.LENGTH_SHORT).show()
+                filePathCallback?.onReceiveValue(null)
+                filePathCallback = null
+                lastCameraFile = null
+            }
         } catch (e: Exception) {
             Toast.makeText(this, getString(R.string.camera_error), Toast.LENGTH_SHORT).show()
             filePathCallback?.onReceiveValue(null)
