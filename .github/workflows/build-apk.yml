@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: OrderLinkApp
@@ -52,6 +54,6 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: رابط النظام - Build ${{ github.run_number }}
           files: OrderLinkApp/app/build/outputs/apk/debug/app-debug.apk
-          generate_release_notes: true
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
