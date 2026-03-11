@@ -93,7 +93,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        menu?.findItem(R.id.action_change_link)?.isVisible = (binding.webView.visibility == View.VISIBLE)
+        menu?.findItem(R.id.action_change_link)?.isVisible = false
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -111,6 +111,7 @@ class MainActivity : AppCompatActivity() {
     private fun showUrlInputScreen() {
         binding.urlInputSection.visibility = View.VISIBLE
         binding.webView.visibility = View.GONE
+        supportActionBar?.show()
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
         invalidateOptionsMenu()
 
@@ -137,28 +138,41 @@ class MainActivity : AppCompatActivity() {
         return u.takeIf { it.startsWith("https://") && u.length > 10 }
     }
 
+    private fun handleUrl(requestUrl: String, baseUrl: String): Boolean {
+        val scheme = Uri.parse(requestUrl).scheme?.lowercase() ?: ""
+        when {
+            scheme == "tel" || scheme == "mailto" || scheme == "sms" -> return openExternalUrl(requestUrl)
+            scheme == "whatsapp" || scheme == "wa" -> return openExternalUrl(requestUrl)
+            requestUrl.contains("wa.me", ignoreCase = true) || requestUrl.contains("api.whatsapp.com", ignoreCase = true) -> return openExternalUrl(requestUrl)
+            scheme == "http" || scheme == "https" -> {
+                val baseHost = Uri.parse(getSavedUrl() ?: baseUrl).host ?: ""
+                val requestHost = Uri.parse(requestUrl).host ?: ""
+                if (requestHost != baseHost) return openExternalUrl(requestUrl)
+                return false
+            }
+            else -> return openExternalUrl(requestUrl)
+        }
+    }
+
     private fun openExternalUrl(url: String): Boolean {
         val uri = Uri.parse(url)
         val scheme = uri.scheme?.lowercase() ?: ""
+        val isWhatsApp = url.contains("wa.me", ignoreCase = true) ||
+            url.contains("api.whatsapp.com", ignoreCase = true) ||
+            scheme == "whatsapp" || scheme == "wa"
         val intent = when {
             scheme == "tel" -> Intent(Intent.ACTION_DIAL, uri)
             scheme == "mailto" -> Intent(Intent.ACTION_SENDTO, uri)
             scheme == "sms" -> Intent(Intent.ACTION_VIEW, uri)
-            scheme == "whatsapp" || scheme == "wa" -> Intent(Intent.ACTION_VIEW, uri).apply {
-                setPackage("com.whatsapp")
-            }
-            url.contains("wa.me", ignoreCase = true) ||
-            url.contains("api.whatsapp.com", ignoreCase = true) -> Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                setPackage("com.whatsapp")
-            }
+            isWhatsApp -> Intent(Intent.ACTION_VIEW, Uri.parse(url))
             else -> Intent(Intent.ACTION_VIEW, uri)
         }
         return try {
-            startActivity(Intent.createChooser(intent, null))
+            startActivity(intent)
             true
         } catch (e: Exception) {
             try {
-                startActivity(Intent(Intent.ACTION_VIEW, uri))
+                startActivity(Intent.createChooser(intent, null))
                 true
             } catch (e2: Exception) {
                 false
@@ -217,6 +231,7 @@ class MainActivity : AppCompatActivity() {
     private fun showWebViewAndLoad(url: String) {
         binding.urlInputSection.visibility = View.GONE
         binding.webView.visibility = View.VISIBLE
+        supportActionBar?.hide()
         invalidateOptionsMenu()
 
         binding.webView.apply {
@@ -226,19 +241,13 @@ class MainActivity : AppCompatActivity() {
                     request: WebResourceRequest?
                 ): Boolean {
                     val requestUrl = request?.url?.toString() ?: return false
-                    val scheme = request.url?.scheme?.lowercase() ?: ""
-                    when {
-                        scheme == "tel" || scheme == "mailto" || scheme == "sms" -> return openExternalUrl(requestUrl)
-                        scheme == "whatsapp" || scheme == "wa" -> return openExternalUrl(requestUrl)
-                        requestUrl.contains("wa.me", ignoreCase = true) || requestUrl.contains("api.whatsapp.com", ignoreCase = true) -> return openExternalUrl(requestUrl)
-                        scheme == "http" || scheme == "https" -> {
-                            val baseHost = Uri.parse(getSavedUrl() ?: url).host ?: ""
-                            val requestHost = Uri.parse(requestUrl).host ?: ""
-                            if (requestHost != baseHost) return openExternalUrl(requestUrl)
-                            return false
-                        }
-                        else -> return openExternalUrl(requestUrl)
-                    }
+                    return handleUrl(requestUrl, url)
+                }
+
+                @Suppress("DEPRECATION")
+                override fun shouldOverrideUrlLoading(view: WebView?, urlStr: String?): Boolean {
+                    if (urlStr != null) return handleUrl(urlStr, url)
+                    return false
                 }
             }
             webChromeClient = object : WebChromeClient() {
