@@ -12,8 +12,11 @@ import android.webkit.WebChromeClient
 import android.webkit.WebChromeClient.FileChooserParams
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
+import android.os.Handler
+import android.os.Looper
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -37,6 +40,9 @@ class MainActivity : AppCompatActivity() {
 
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     private var lastCameraFile: File? = null
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var threeFingerRunnable: Runnable? = null
 
     private val takePictureLauncher = registerForActivityResult(
         ActivityResultContracts.TakePicture()
@@ -324,9 +330,53 @@ class MainActivity : AppCompatActivity() {
                 allowFileAccess = true
                 allowContentAccess = true
                 javaScriptCanOpenWindowsAutomatically = true
+                setSupportZoom(true)
+                builtInZoomControls = false
+                displayZoomControls = false
             }
+            setInitialScale(67)
+            setOnTouchListener(threeFingerLongPressListener)
             loadUrl(url)
         }
+    }
+
+    private val threeFingerLongPressListener = View.OnTouchListener { _, event ->
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                if (event.pointerCount == 3) {
+                    threeFingerRunnable?.let { handler.removeCallbacks(it) }
+                    threeFingerRunnable = Runnable {
+                        threeFingerRunnable = null
+                        if (binding.webView.visibility == View.VISIBLE) {
+                            showChangeLinkDialog()
+                        }
+                    }
+                    handler.postDelayed(threeFingerRunnable!!, 800)
+                }
+                false
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                if (event.pointerCount <= 2) {
+                    threeFingerRunnable?.let { handler.removeCallbacks(it) }
+                    threeFingerRunnable = null
+                }
+                false
+            }
+            else -> false
+        }
+    }
+
+    private fun showChangeLinkDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.change_link))
+            .setMessage(getString(R.string.change_link_confirm))
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                clearSavedUrl()
+                binding.urlEditText.text.clear()
+                showUrlInputScreen()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun getSavedUrl(): String? {
