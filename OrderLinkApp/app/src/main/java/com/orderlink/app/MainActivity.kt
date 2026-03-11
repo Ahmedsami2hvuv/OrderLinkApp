@@ -228,7 +228,7 @@ class MainActivity : AppCompatActivity() {
     private fun showFileChooserOptions() {
         val options = arrayOf(
             getString(R.string.camera),
-            getString(R.string.gallery)
+            "المعرض"
         )
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.choose_photo))
