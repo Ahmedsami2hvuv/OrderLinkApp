@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- خلفية مستديرة -->
+    <path
+        android:fillColor="#C62828"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"/>
+    <!-- حرف الألف باللون الأبيض -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,32 L58,32 L58,76 L50,76 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,28 L62,28 L60,32 L50,32 Z"/>
+</vector>
