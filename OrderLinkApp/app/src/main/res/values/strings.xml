@@ -13,4 +13,6 @@
     <string name="camera_error">تعذر فتح الكاميرا</string>
     <string name="camera_permission_required">السماح بالكاميرا مطلوب لالتقاط الصورة</string>
     <string name="change_link_confirm">هل تريد إدخال رابط جديد؟</string>
+    <string name="opening_admin_whatsapp">فتح واتساب الإداري</string>
+    <string name="cannot_open_whatsapp">تعذر فتح واتساب</string>
 </resources>
